@@ -1,0 +1,416 @@
+# ingress pod/controller
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: judge0-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+spec:
+  rules:
+  - host: web.local
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/next"
+        backend:
+          service:
+            name: next-service
+            port: 
+              number: 80
+      # - pathType: Prefix
+      #   path: "/socket"
+      #   backend:
+      #     service:
+      #       name: ws-service
+      #       port:
+      #         number: 3001
+
+---
+# next service 
+apiVersion: v1
+kind: Service
+metadata:
+  name: next-service
+spec:
+  selector:
+    app: next-deployment
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+
+---
+# next deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: next-deployment
+spec:
+  selector:
+    matchLabels:
+      app: next-deployment
+  template:
+    metadata:
+      labels:
+        app: next-deployment
+    spec:
+      containers:
+      - name: next-container
+        image: my-next-image
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          
+        ports:
+        - containerPort: 3000
+
+---
+# next HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: next-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: next-deployment
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+
+
+
+---
+# judge0 api service
+apiVersion: v1
+kind: Service
+metadata:
+  name: judge0api-service
+spec:
+  selector:
+    app: judge0api-deployment
+  ports:
+    - port: 80
+      targetPort: 2358
+  type: ClusterIP
+  
+
+---
+# judge0 api deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: judge0api-deployment
+spec:
+  selector:
+    matchLabels:
+      app: judge0api-deployment
+  template:
+    metadata:
+      labels:
+        app: judge0api-deployment
+    spec:
+      containers:
+        - name: judge0api-deployment-container
+          image: judge0/judge0:1.13.1
+          ports:
+            - containerPort: 2358
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # volumeMounts:
+          
+---      
+# pg service
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg-service
+spec:
+  selector:
+    app: pg-deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5432
+  type: ClusterIP
+
+---
+# pg deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pg-deployment
+  template:
+    metadata:
+      labels:
+        app: pg-deployment
+    spec:
+      containers:
+        - name: pg-deployment-container
+          image: postgres
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+---
+# redis service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: redis-deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 6379
+  type: ClusterIP
+
+---
+# redis deployment -> control judge0 worker's HPA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+spec:
+  selector:
+    matchLabels:
+      app: redis-deployment
+  template:
+    metadata:
+      labels:
+        app: redis-deployment
+    spec:
+      containers:
+        - name: redis-deployment-container
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits: 
+              memory: "512Mi"
+              cpu: "500m"
+
+---
+# judge0 worker's deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: judge0worker-deployment
+spec:
+  selector:
+    matchLabels:
+      app: judge0worker-deployment
+  template:
+    metadata:
+      labels:
+        app: judge0worker-deployment
+    spec:
+      containers:
+        - name: judge0worker-deployment-container
+          image: judge0/judge0:1.13.1
+          command: ["./scripts/workers"]
+          ports:
+            - containerPort: 80 #!!!!!
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits: 
+              memory: "512Mi"
+              cpu: "500m"
+
+
+---
+# judge0 worker's HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: judge0worker-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: judge0worker-deployment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: 
+          type: Utilization
+          averageUtilization: 50
+
+#TODO create PersistentVolumes for pg ad redis
+---
+# # pg pv 
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: pg-pv
+# spec:
+#   capacity:
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Recycle
+#   storageClassName: slow
+#   mountOptions:
+#     - hard
+#     - nfsvers=4.1
+#   nfs:
+#     path: /tmp
+#     server: 172.17.0.2
+
+# ---
+# # pg pvc
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: pg-pvc
+# spec:
+#   resources:
+#     requests:
+#       storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+
+# ---
+# # redis pv
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: redis-pv
+# spec:
+#   capacity:
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Recycle
+#   storageClassName: slow
+#   mountOptions:
+#     - hard
+#     - nfsvers=4.1
+#   nfs:
+#     path: /tmp
+#     server: 172.17.0.2
+
+# ---
+# # redis pvc
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: redis-pvc
+# spec:
+#   resources:
+#     requests:
+#       storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+
+
+---
+#TODO modify worker code to push to kafka and WEBSOCKET IMPLEMENTATION
+# kafka deployment
+# apiVersion: 
+
+# kafka pv
+
+# kafka pvc
+
+---
+# ws service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ws-service
+spec: 
+  selector:
+    app: ws-deployment
+  type: ClusterIP
+
+---
+# ws deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-deployment
+spec:
+  selector:
+    matchLabels:
+      app: ws-deployment
+  template:
+    metadata:
+      labels:
+        app: ws-deployment
+    spec:
+      containers:
+        - name: ws-container
+          image: my-ws-image
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          ports: 
+            - containerPort: 8080
+
+---      
+# # ws HPA
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: ws-hpa
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: ws-deployment
+#   minReplicas: 1
+#   maxReplicas: 3
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 50
