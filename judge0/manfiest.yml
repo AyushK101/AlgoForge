@@ -63,7 +63,7 @@ spec:
       containers:
         - name: next-container
           imagePullPolicy: Always
-          image: algoforge-next:latest
+          image: ayushk101/algoforge-next:latest
           resources:
             requests:
               memory: "64Mi"
@@ -78,11 +78,11 @@ spec:
           #     mountPath: /usr/src/app/.env
           #     subPath: .env
           envFrom:
-            - ConfigMapRef:
+            - configMapRef:
                 name: next-config
       volumes:
         - name: env
-          ConfigMap:
+          configMap:
             name: next-config
 ---
 # next HPA
@@ -152,7 +152,7 @@ spec:
               subPath: judge0.conf
       volumes:
         - name: judge0config
-          ConfigMap:
+          configMap:
             name: judge0conf-config
 ---
 # pg service
@@ -291,7 +291,7 @@ spec:
               subPath: judge0.conf
       volumes:
         - name: judge0config
-          ConfigMap:
+          configMap:
             name: judge0conf-config
 
 ---
