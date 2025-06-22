@@ -1,2 +1,7 @@
 frontend
 .vscode
+sshkey.md
+authFlow.md
+kubeReadme.md
+sshkey.md
+tempAuthOptionOutput.md

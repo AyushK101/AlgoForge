@@ -9,43 +9,47 @@ metadata:
 
 spec:
   rules:
-  - host: web.local
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/next"
-        backend:
-          service:
-            name: next-service
-            port: 
-              number: 80
-      # - pathType: Prefix
-      #   path: "/socket"
-      #   backend:
-      #     service:
-      #       name: ws-service
-      #       port:
-      #         number: 3001
+    - host: web.local
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: next-service
+                port:
+                  number: 80
+        # - pathType: Prefix
+        #   path: "/socket"
+        #   backend:
+        #     service:
+        #       name: ws-service
+        #       port:
+        #         number: 3001
 
 ---
-# next service 
+# next service
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: default
   name: next-service
 spec:
   selector:
     app: next-deployment
   ports:
-  - port: 80
-    targetPort: 3000
+    - port: 80
+      targetPort: 3000
   type: ClusterIP
 
 ---
-# next deployment 
+
+---
+# next deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: default
   name: next-deployment
 spec:
   selector:
@@ -57,19 +61,29 @@ spec:
         app: next-deployment
     spec:
       containers:
-      - name: next-container
-        image: my-next-image
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-          
-        ports:
-        - containerPort: 3000
-
+        - name: next-container
+          imagePullPolicy: Always
+          image: algoforge-next:latest
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 3000
+          # volumeMounts:
+          #   - name: env
+          #     mountPath: /usr/src/app/.env
+          #     subPath: .env
+          envFrom:
+            - ConfigMapRef:
+                name: next-config
+      volumes:
+        - name: env
+          ConfigMap:
+            name: next-config
 ---
 # next HPA
 apiVersion: autoscaling/v2
@@ -84,14 +98,12 @@ spec:
   minReplicas: 1
   maxReplicas: 3
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 50
-
-
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
 
 ---
 # judge0 api service
@@ -106,7 +118,6 @@ spec:
     - port: 80
       targetPort: 2358
   type: ClusterIP
-  
 
 ---
 # judge0 api deployment
@@ -135,9 +146,15 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-          # volumeMounts:
-          
----      
+          volumeMounts:
+            - name: judge0config
+              mountPath: /judge0.conf
+              subPath: judge0.conf
+      volumes:
+        - name: judge0config
+          ConfigMap:
+            name: judge0conf-config
+---
 # pg service
 apiVersion: v1
 kind: Service
@@ -148,7 +165,7 @@ spec:
     app: pg-deployment
   ports:
     - protocol: TCP
-      port: 80
+      port: 5432
       targetPort: 5432
   type: ClusterIP
 
@@ -179,6 +196,19 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          env:
+            - name: POSTGRES_PASSWORD
+              value: RdRBuDznkvLP2LpnEryNmgsdkxv8btM6
+            - name: POSTGRES_DB
+              value: judge0
+            - name: POSTGRES_USER
+              value: postgres
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
 
 ---
 # redis service
@@ -191,7 +221,7 @@ spec:
     app: redis-deployment
   ports:
     - protocol: TCP
-      port: 80
+      port: 6379
       targetPort: 6379
   type: ClusterIP
 
@@ -211,7 +241,7 @@ spec:
         app: redis-deployment
     spec:
       containers:
-        - name: redis-deployment-container
+        - name: redis-container
           image: redis:latest
           ports:
             - containerPort: 6379
@@ -219,9 +249,15 @@ spec:
             requests:
               memory: "128Mi"
               cpu: "250m"
-            limits: 
+            limits:
               memory: "512Mi"
               cpu: "500m"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
 
 ---
 # judge0 worker's deployment
@@ -239,19 +275,24 @@ spec:
         app: judge0worker-deployment
     spec:
       containers:
-        - name: judge0worker-deployment-container
+        - name: judge0worker-container
           image: judge0/judge0:1.13.1
           command: ["./scripts/workers"]
-          ports:
-            - containerPort: 80 #!!!!!
           resources:
             requests:
               memory: "128Mi"
               cpu: "250m"
-            limits: 
+            limits:
               memory: "512Mi"
               cpu: "500m"
-
+          volumeMounts:
+            - name: judge0config
+              mountPath: /judge0.conf
+              subPath: judge0.conf
+      volumes:
+        - name: judge0config
+          ConfigMap:
+            name: judge0conf-config
 
 ---
 # judge0 worker's HPA
@@ -270,13 +311,13 @@ spec:
     - type: Resource
       resource:
         name: cpu
-        target: 
+        target:
           type: Utilization
           averageUtilization: 50
 
 #TODO create PersistentVolumes for pg ad redis
 ---
-# # pg pv 
+# # pg pv
 # apiVersion: v1
 # kind: PersistentVolume
 # metadata:
@@ -345,56 +386,55 @@ spec:
 #   accessModes:
 #     - ReadWriteOnce
 
-
 ---
 #TODO modify worker code to push to kafka and WEBSOCKET IMPLEMENTATION
 # kafka deployment
-# apiVersion: 
+# apiVersion:
 
 # kafka pv
 
 # kafka pvc
 
----
-# ws service
-apiVersion: v1
-kind: Service
-metadata:
-  name: ws-service
-spec: 
-  selector:
-    app: ws-deployment
-  type: ClusterIP
-
----
-# ws deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ws-deployment
-spec:
-  selector:
-    matchLabels:
-      app: ws-deployment
-  template:
-    metadata:
-      labels:
-        app: ws-deployment
-    spec:
-      containers:
-        - name: ws-container
-          image: my-ws-image
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-          ports: 
-            - containerPort: 8080
-
----      
+# ---
+# # ws service
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: ws-service
+# spec:
+#   selector:
+#     app: ws-deployment
+#   type: ClusterIP
+#
+# ---
+# # ws deployment
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: ws-deployment
+# spec:
+#   selector:
+#     matchLabels:
+#       app: ws-deployment
+#   template:
+#     metadata:
+#       labels:
+#         app: ws-deployment
+#     spec:
+#       containers:
+#         - name: ws-container
+#           image: my-ws-image
+#           resources:
+#             requests:
+#               memory: "128Mi"
+#               cpu: "250m"
+#             limits:
+#               memory: "512Mi"
+#               cpu: "500m"
+#           ports:
+#             - containerPort: 8080
+#
+# ---
 # # ws HPA
 # apiVersion: autoscaling/v2
 # kind: HorizontalPodAutoscaler
