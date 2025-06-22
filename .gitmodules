@@ -1,3 +1,4 @@
-[submodule "./frontend"]
-  path = ./frontend
-  url = https://github.com/AyushK101/AlgoForge.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/AyushK101/algoForge-fe.git
+# git submodule add https://github.com/AyushK101/algoForge-fe.git  frontend
