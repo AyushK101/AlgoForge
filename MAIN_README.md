@@ -29,7 +29,7 @@ kind create cluster --name algoforge-cluster --config clusters.yml
 ```
 
 
-7. Create ingress controller -- with a NodePort (hack for loadbalancer )
+7. Create ingress controller -- with a NodePort ( alternative for loadbalancer on local )
 > on local this will expose a NodePort, 
 ```bash
 helm install nginx-ingress ingress-nginx/ingress-nginx \
