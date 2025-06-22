@@ -3,32 +3,32 @@ kind: ConfigMap
 metadata:
   name: next-config
 data:
-  .env: |
-    DATABASE_URL="postgresql://pgapp_owner:npg_fKmbl1zU2EJp@ep-rough-sky-a8pshdie-pooler.eastus2.azure.neon.tech/pg_app?sslmode=require" # try adding neonDB 
-    REDIS_URL="redis://redis-service:6379"
+  # .env: |
+    DATABASE_URL: "postgresql://pgapp_owner:npg_fKmbl1zU2EJp@ep-rough-sky-a8pshdie-pooler.eastus2.azure.neon.tech/pg_app?sslmode=require" # try adding neonDB 
+    REDIS_URL: "redis://redis-service:6379"
     # diff db on same pg server for judge0
-    NEXTAUTH_URL=http://web.local:3000
-    NEXTAUTH_SECRET="xy/:yfzzN2_;{df;+qx)LU=1qC)%G"
+    NEXTAUTH_URL: http://web.local:3000
+    NEXTAUTH_SECRET: "xy/:yfzzN2_;{df;+qx)LU=1qC)%G"
 
-    GITHUB_ID=Ov23lioQ3HtRwhHfAKeA
-    GITHUB_SECRET=f8334ce766276943def0534a411c0d6a5d5b0f67
+    GITHUB_ID: Ov23lioQ3HtRwhHfAKeA
+    GITHUB_SECRET: f8334ce766276943def0534a411c0d6a5d5b0f67
 
-    GOOGLE_CLIENT_ID=571222126447-p29dej0531481lhton8cptekfm9719n3.apps.googleusercontent.com
-    GOOGLE_CLIENT_SECRET=
-
-
-    JWT_ACCESS_SECRET="qn,6Zi3GG&)+D:._-9hkTdPRE.eCv."
-    JWT_REFRESH_SECRET="zC:(.NqNF_u+*[*GWQ&[u{yne/@2"
-    JWT_REFRESH_EXPIRY="7d"
-    JWT_ACCESS_EXPIRY="2hr"
+    # GOOGLE_CLIENT_ID: 571222126447-p29dej0531481lhton8cptekfm9719n3.apps.googleusercontent.com
+    # GOOGLE_CLIENT_SECRET: 
 
 
-    NEXT_PUBLIC_BASE_URL="http://web.local:3000"
+    JWT_ACCESS_SECRET: "qn,6Zi3GG&)+D:._-9hkTdPRE.eCv."
+    JWT_REFRESH_SECRET: "zC:(.NqNF_u+*[*GWQ&[u{yne/@2"
+    JWT_REFRESH_EXPIRY: "7d"
+    JWT_ACCESS_EXPIRY: "2hr"
 
-    ADMIN_EMAIL="ayush.2327cs1052@kiet.edu"
+
+    NEXT_PUBLIC_BASE_URL: "http://web.local:3000"
+
+    ADMIN_EMAIL: "ayush.2327cs1052@kiet.edu"
 
 
-    JUDGE0_API_URL="http://judge0api-service" # change to vm instance network ip
+    JUDGE0_API_URL: "http://judge0api-service" # change to vm instance network ip
 
 
 

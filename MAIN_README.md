@@ -3,9 +3,12 @@
 ## Pre-requisites
 1. Host machine should be able to give access of `cgoupsv1` , if not follow a 
 development hack, 
-
+```bash
+launch focal --name judge0-vm --cpus 2 --memory 4G --disk 10G
+```
 
 ## Steps
+
 1. Install docker( desktop ) https://docs.docker.com/desktop/setup/install/linux/ubuntu/
 2. Install kind and kubectl 
   - https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/  

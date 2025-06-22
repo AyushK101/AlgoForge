@@ -5,9 +5,11 @@ metadata:
   name: judge0-ingress
   namespace: default
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-regex: "true"
 
 spec:
+  ingressClassName: nginx
   rules:
     - host: web.local
       http:
@@ -62,15 +64,15 @@ spec:
     spec:
       containers:
         - name: next-container
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           image: ayushk101/algoforge-next:latest
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "250m"
-            limits:
-              memory: "128Mi"
+              memory: "800Mi"
               cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
           ports:
             - containerPort: 3000
           # volumeMounts:
@@ -80,10 +82,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: next-config
-      volumes:
-        - name: env
-          configMap:
-            name: next-config
+      # volumes:
+      #   - name: env
+      #     configMap:
+      #       name: next-config
 ---
 # next HPA
 apiVersion: autoscaling/v2
@@ -136,6 +138,7 @@ spec:
     spec:
       containers:
         - name: judge0api-deployment-container
+          imagePullPolicy: IfNotPresent
           image: judge0/judge0:1.13.1
           ports:
             - containerPort: 2358
@@ -186,6 +189,7 @@ spec:
     spec:
       containers:
         - name: pg-deployment-container
+          imagePullPolicy: IfNotPresent
           image: postgres
           ports:
             - containerPort: 5432
@@ -276,6 +280,7 @@ spec:
     spec:
       containers:
         - name: judge0worker-container
+          imagePullPolicy: IfNotPresent
           image: judge0/judge0:1.13.1
           command: ["./scripts/workers"]
           resources:
