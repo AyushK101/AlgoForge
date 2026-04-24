@@ -1,6 +1,7 @@
 {
   "name": "algoforge",
   "version": "0.1.0",
+  "description": "Kubernetes-native online judge platform with queue-based execution and orchestration.",
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
