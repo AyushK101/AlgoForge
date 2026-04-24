@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  username     String
+  avatarUrl    String?
+  role         Role         @default(USER)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  submissions  Submission[]
+}
+
+model Problem {
+  id            String           @id @default(uuid())
+  slug          String           @unique
+  title         String
+  difficulty    Difficulty
+  statement     String
+  constraints   String           @default("")
+  tags          String[]         @default([])
+  isPublished   Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  versions      ProblemVersion[]
+  testcases     Testcase[]
+  submissions   Submission[]
+
+  @@index([slug])
+}
+
+model ProblemVersion {
+  id          String   @id @default(uuid())
+  problemId   String
+  version     Int
+  snapshot    Json
+  createdAt   DateTime @default(now())
+  problem     Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, version])
+}
+
+model Testcase {
+  id             String         @id @default(uuid())
+  problemId      String
+  name           String
+  input          String
+  expectedOutput String
+  isSample       Boolean        @default(false)
+  weight         Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  problem        Problem        @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  jobs           ExecutionJob[]
+}
+
+model Language {
+  id              String       @id @default(uuid())
+  slug            LanguageSlug @unique
+  name            String
+  sourceFile      String
+  compileCommand  String[]
+  runCommand      String[]
+  defaultCpuMs    Int          @default(2000)
+  defaultMemoryKb Int          @default(262144)
+  isEnabled       Boolean      @default(true)
+  submissions     Submission[]
+}
+
+model Submission {
+  id              String         @id @default(uuid())
+  userId          String?
+  problemId       String
+  languageId      String
+  sourceCode      String
+  status          Verdict        @default(QUEUED)
+  totalTests      Int            @default(0)
+  passedTests     Int            @default(0)
+  maxMemoryKb     Int            @default(0)
+  totalWallTimeMs Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User?          @relation(fields: [userId], references: [id])
+  problem         Problem        @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  language        Language       @relation(fields: [languageId], references: [id])
+  jobs            ExecutionJob[]
+
+  @@index([userId, problemId, createdAt])
+  @@index([problemId, status])
+}
+
+model ExecutionJob {
+  id           String           @id @default(uuid())
+  submissionId String
+  testcaseId   String
+  status       Verdict          @default(QUEUED)
+  attempts     Int              @default(0)
+  lockedBy     String?
+  lockedAt     DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  submission   Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  testcase     Testcase         @relation(fields: [testcaseId], references: [id], onDelete: Cascade)
+  result       ExecutionResult?
+
+  @@index([status, createdAt])
+}
+
+model ExecutionResult {
+  id              String       @id @default(uuid())
+  executionJobId  String       @unique
+  verdict         Verdict
+  stdout          String       @default("")
+  stderr          String       @default("")
+  compileOutput   String       @default("")
+  exitCode        Int?
+  wallTimeMs      Int          @default(0)
+  memoryKb        Int          @default(0)
+  message         String?
+  createdAt       DateTime     @default(now())
+  executionJob    ExecutionJob @relation(fields: [executionJobId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum LanguageSlug {
+  c
+  cpp
+  java
+  python
+}
+
+enum Verdict {
+  QUEUED
+  RUNNING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILE_ERROR
+  INTERNAL_ERROR
+  CANCELED
+}

@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+coverage
+.git
+.env
+.env.*
+*.log
+minio-data
+postgres-data
+redis-data

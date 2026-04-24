@@ -1,0 +1,16 @@
+.DS_Store
+node_modules
+.next
+dist
+coverage
+.turbo
+.env
+.env.*
+!.env.example
+*.log
+tmp
+uploads
+minio-data
+.codex
+*.bak
+*.tsbuildinfo

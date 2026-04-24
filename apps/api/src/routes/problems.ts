@@ -1,0 +1,90 @@
+import type { FastifyInstance } from 'fastify';
+import { prisma } from '@algoforge/db';
+import { createProblemSchema } from '@algoforge/types';
+
+export async function problemRoutes(app: FastifyInstance) {
+  app.get('/problems', async (request) => {
+    const query = request.query as {
+      search?: string;
+      difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+      tag?: string;
+      page?: string;
+      limit?: string;
+    };
+    const page = Math.max(1, Number(query.page ?? 1));
+    const limit = Math.min(50, Math.max(1, Number(query.limit ?? 20)));
+
+    const problems = await prisma.problem.findMany({
+      where: {
+        isPublished: true,
+        difficulty: query.difficulty,
+        tags: query.tag ? { has: query.tag } : undefined,
+        OR: query.search
+          ? [
+              { title: { contains: query.search, mode: 'insensitive' } },
+              { slug: { contains: query.search, mode: 'insensitive' } },
+            ]
+          : undefined,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        difficulty: true,
+        tags: true,
+        createdAt: true,
+      },
+    });
+
+    return { problems, page, limit };
+  });
+
+  app.get('/problems/:slug', async (request, reply) => {
+    const { slug } = request.params as { slug: string };
+    const problem = await prisma.problem.findUnique({
+      where: { slug },
+      include: {
+        testcases: {
+          where: { isSample: true },
+          select: { id: true, name: true, input: true, expectedOutput: true, isSample: true },
+        },
+      },
+    });
+
+    if (!problem || !problem.isPublished) {
+      return reply.code(404).send({ error: 'Problem not found' });
+    }
+
+    return { problem };
+  });
+
+  app.post('/admin/problems', async (request, reply) => {
+    const input = createProblemSchema.parse(request.body);
+    const problem = await prisma.problem.create({
+      data: {
+        title: input.title,
+        slug: input.slug,
+        difficulty: input.difficulty,
+        statement: input.statement,
+        constraints: input.constraints,
+        tags: input.tags,
+        isPublished: true,
+        testcases: {
+          create: input.testcases,
+        },
+        versions: {
+          create: {
+            version: 1,
+            snapshot: input,
+          },
+        },
+      },
+      include: { testcases: true },
+    });
+
+    return reply.code(201).send({ problem });
+  });
+}

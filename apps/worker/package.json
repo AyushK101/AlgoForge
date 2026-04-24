@@ -1,0 +1,27 @@
+{
+  "name": "@algoforge/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/worker.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@algoforge/db": "workspace:*",
+    "@algoforge/judge-protocol": "workspace:*",
+    "bullmq": "^5.56.0",
+    "ioredis": "^5.6.1",
+    "prom-client": "^15.1.3",
+    "tsx": "^4.19.4",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

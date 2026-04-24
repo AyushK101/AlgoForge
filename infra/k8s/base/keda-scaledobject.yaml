@@ -1,0 +1,18 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: judge-worker-redis-queue
+  namespace: algoforge-judge
+spec:
+  scaleTargetRef:
+    name: judge-worker
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 5
+  cooldownPeriod: 60
+  triggers:
+    - type: redis
+      metadata:
+        address: redis.algoforge-data.svc.cluster.local:6379
+        listName: bull:judge.execution-jobs:wait
+        listLength: "3"

@@ -1,0 +1,28 @@
+{
+  "name": "algoforge",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @algoforge/api --filter @algoforge/web dev",
+    "dev:api": "pnpm --filter @algoforge/api dev",
+    "dev:web": "pnpm --filter @algoforge/web dev",
+    "dev:worker": "pnpm --filter @algoforge/worker dev",
+    "dev:orchestrator": "pnpm --filter @algoforge/orchestrator dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @algoforge/db generate",
+    "db:migrate": "pnpm --filter @algoforge/db migrate",
+    "db:studio": "pnpm --filter @algoforge/db studio"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^20.19.1",
+    "eslint": "^9.29.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
