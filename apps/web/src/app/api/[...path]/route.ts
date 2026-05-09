@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const backendBaseUrl = (
   process.env.INTERNAL_APIV2_URL ??
   process.env.NEXT_PUBLIC_APIV2_URL ??
@@ -8,32 +11,21 @@ const backendBaseUrl = (
   "http://localhost:4001"
 ).replace(/\/$/, "");
 
-const HOP_BY_HOP_HEADERS = [
-  "host",
-  "connection",
-  "content-length",
-  "transfer-encoding",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "te",
-  "trailer",
-  "upgrade",
-  "accept-encoding",
-];
-
 function buildForwardHeaders(request: NextRequest) {
-  const headers = new Headers(request.headers);
+  const headers = new Headers();
 
-  for (const header of HOP_BY_HOP_HEADERS) {
-    headers.delete(header);
-  }
+  const contentType = request.headers.get("content-type");
+  const userId = request.headers.get("x-user-id");
+  const authorization = request.headers.get("authorization");
+  const cookie = request.headers.get("cookie");
 
   headers.set("accept", "application/json");
+  headers.set("accept-encoding", "identity");
 
-  if (!headers.has("content-type") && request.method !== "GET") {
-    headers.set("content-type", "application/json");
-  }
+  if (contentType) headers.set("content-type", contentType);
+  if (userId) headers.set("x-user-id", userId);
+  if (authorization) headers.set("authorization", authorization);
+  if (cookie) headers.set("cookie", cookie);
 
   return headers;
 }
@@ -60,19 +52,22 @@ async function proxyRequest(
     }
 
     const upstreamResponse = await fetch(targetUrl, init);
+    const text = request.method === "HEAD" ? "" : await upstreamResponse.text();
 
-    const contentType =
-      upstreamResponse.headers.get("content-type") ?? "application/json";
+    let data: unknown;
 
-    const body =
-      request.method === "HEAD" ? null : await upstreamResponse.text();
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = {
+        raw: text,
+      };
+    }
 
-    return new NextResponse(body, {
+    return NextResponse.json(data, {
       status: upstreamResponse.status,
-      statusText: upstreamResponse.statusText,
       headers: {
-        "content-type": contentType,
-        "cache-control": "no-store",
+        "cache-control": "no-store, no-transform",
       },
     });
   } catch (error) {
