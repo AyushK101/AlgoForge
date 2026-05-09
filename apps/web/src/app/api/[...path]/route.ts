@@ -36,19 +36,19 @@ async function proxyRequest(
     }
 
     const upstreamResponse = await fetch(targetUrl, init);
-
-    const responseHeaders = new Headers(upstreamResponse.headers);
-    responseHeaders.delete("content-encoding");
-    responseHeaders.delete("content-length");
-    responseHeaders.delete("transfer-encoding");
-    responseHeaders.delete("connection");
-
     const body = await upstreamResponse.text();
 
-    return new Response(body, {
+    console.log("Proxy target:", targetUrl.toString());
+    console.log("Proxy status:", upstreamResponse.status);
+    console.log("Proxy body:", body);
+
+    return new Response(body || JSON.stringify({ ok: true }), {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
-      headers: responseHeaders,
+      headers: {
+        "content-type":
+          upstreamResponse.headers.get("content-type") ?? "application/json",
+      },
     });
   } catch (error) {
     console.error("API proxy failed:", error);
