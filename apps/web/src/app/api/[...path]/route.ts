@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const backendBaseUrl = (
   process.env.INTERNAL_APIV2_URL ??
@@ -8,6 +8,36 @@ const backendBaseUrl = (
   "http://localhost:4001"
 ).replace(/\/$/, "");
 
+const HOP_BY_HOP_HEADERS = [
+  "host",
+  "connection",
+  "content-length",
+  "transfer-encoding",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "upgrade",
+  "accept-encoding",
+];
+
+function buildForwardHeaders(request: NextRequest) {
+  const headers = new Headers(request.headers);
+
+  for (const header of HOP_BY_HOP_HEADERS) {
+    headers.delete(header);
+  }
+
+  headers.set("accept", "application/json");
+
+  if (!headers.has("content-type") && request.method !== "GET") {
+    headers.set("content-type", "application/json");
+  }
+
+  return headers;
+}
+
 async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
@@ -15,20 +45,14 @@ async function proxyRequest(
   try {
     const { path } = await context.params;
 
-    const targetUrl = new URL(
-      `${backendBaseUrl}/${path.join("/")}${request.nextUrl.search}`,
-    );
-
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.delete("host");
-    requestHeaders.delete("content-length");
-    requestHeaders.delete("connection");
-    requestHeaders.delete("accept-encoding");
+    const targetUrl = new URL(`${backendBaseUrl}/${path.join("/")}`);
+    targetUrl.search = request.nextUrl.search;
 
     const init: RequestInit = {
       method: request.method,
-      headers: requestHeaders,
+      headers: buildForwardHeaders(request),
       cache: "no-store",
+      redirect: "manual",
     };
 
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -36,24 +60,23 @@ async function proxyRequest(
     }
 
     const upstreamResponse = await fetch(targetUrl, init);
-    const body = await upstreamResponse.text();
 
-    console.log("Proxy target:", targetUrl.toString());
-    console.log("Proxy status:", upstreamResponse.status);
-    console.log("Proxy body:", body);
+    const contentType =
+      upstreamResponse.headers.get("content-type") ?? "application/json";
 
-    return new Response(body || JSON.stringify({ ok: true }), {
+    const body =
+      request.method === "HEAD" ? null : await upstreamResponse.text();
+
+    return new NextResponse(body, {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
       headers: {
-        "content-type":
-          upstreamResponse.headers.get("content-type") ?? "application/json",
+        "content-type": contentType,
+        "cache-control": "no-store",
       },
     });
   } catch (error) {
-    console.error("API proxy failed:", error);
-
-    return Response.json(
+    return NextResponse.json(
       {
         error: "API proxy failed",
         message: error instanceof Error ? error.message : String(error),
