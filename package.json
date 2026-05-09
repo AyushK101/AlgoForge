@@ -10,7 +10,7 @@
     "dev:web": "pnpm --filter @algoforge/web dev",
     "dev:worker": "pnpm --filter @algoforge/worker dev",
     "dev:orchestrator": "pnpm --filter @algoforge/orchestrator dev",
-    "build": "pnpm -r build",
+    "build": "pnpm --filter @algoforge/types build && pnpm --filter @algoforge/db build && pnpm --filter @algoforge/web build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
