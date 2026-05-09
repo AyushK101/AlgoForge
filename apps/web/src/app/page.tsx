@@ -30,11 +30,11 @@ export default function HomePage() {
             A local-first online judge rewrite with a dedicated API, async execution queue, autoscaled workers, and
             gVisor-ready sandbox runtime images.
           </p>
-          <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+          <div className='flex gap-4 mt-3 justify-center' style={{ display: 'flex', gap: 16, marginTop: 12 }}>
             <Link className="button primary" href="/problems">
               Get Started <ArrowRight size={16} />
             </Link>
-            <Link className="button" href="https://github.com">
+            <Link className="button" href="https://github.com/ayushk101/Algoforge/">
               View Documentation
             </Link>
           </div>
