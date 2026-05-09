@@ -12,76 +12,61 @@ async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  const { path } = await context.params;
-  const targetUrl = new URL(
-    `${backendBaseUrl}/${path.join("/")}${request.nextUrl.search}`,
-  );
+  try {
+    const { path } = await context.params;
 
-  const headers = new Headers(request.headers);
-  headers.delete("host");
+    const targetUrl = new URL(
+      `${backendBaseUrl}/${path.join("/")}${request.nextUrl.search}`,
+    );
 
-  const init: RequestInit = {
-    method: request.method,
-    headers,
-    cache: "no-store",
-  };
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete("host");
+    requestHeaders.delete("content-length");
+    requestHeaders.delete("connection");
+    requestHeaders.delete("accept-encoding");
 
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    init.body = await request.text();
+    const init: RequestInit = {
+      method: request.method,
+      headers: requestHeaders,
+      cache: "no-store",
+    };
+
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      init.body = await request.text();
+    }
+
+    const upstreamResponse = await fetch(targetUrl, init);
+
+    const responseHeaders = new Headers(upstreamResponse.headers);
+    responseHeaders.delete("content-encoding");
+    responseHeaders.delete("content-length");
+    responseHeaders.delete("transfer-encoding");
+    responseHeaders.delete("connection");
+
+    const body = await upstreamResponse.text();
+
+    return new Response(body, {
+      status: upstreamResponse.status,
+      statusText: upstreamResponse.statusText,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    console.error("API proxy failed:", error);
+
+    return Response.json(
+      {
+        error: "API proxy failed",
+        message: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
-
-  const upstreamResponse = await fetch(targetUrl, init);
-  return new Response(upstreamResponse.body, {
-    status: upstreamResponse.status,
-    headers: upstreamResponse.headers,
-  });
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function HEAD(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function PUT(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
-
-export async function OPTIONS(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> },
-) {
-  return proxyRequest(request, context);
-}
+export const GET = proxyRequest;
+export const HEAD = proxyRequest;
+export const POST = proxyRequest;
+export const PUT = proxyRequest;
+export const PATCH = proxyRequest;
+export const DELETE = proxyRequest;
+export const OPTIONS = proxyRequest;
