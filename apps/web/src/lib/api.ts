@@ -4,11 +4,14 @@ import type {
 } from "@algoforge/types";
 
 function resolveApiUrl() {
-  const fallbackApiUrl = "http://localhost:4000";
+  const fallbackApiUrl = "http://localhost:4001";
 
   if (typeof window === "undefined") {
-    const internalApiUrl = process.env["INTERNAL_API_URL"];
-    const publicApiUrl = process.env["NEXT_PUBLIC_API_URL"];
+    const internalApiUrl =
+      process.env["INTERNAL_APIV2_URL"] ?? process.env["INTERNAL_API_URL"];
+    const publicApiUrl =
+      process.env["NEXT_PUBLIC_APIV2_URL"] ??
+      process.env["NEXT_PUBLIC_API_URL"];
     return (internalApiUrl ?? publicApiUrl ?? fallbackApiUrl).replace(
       /\/$/,
       "",

@@ -31,6 +31,8 @@ jobs:
       DATABASE_URL: postgresql://algoforge:algoforge@localhost:5432/algoforge?schema=public
       REDIS_URL: redis://localhost:6379
       NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_APIV2_URL: http://localhost:4001
+      INTERNAL_APIV2_URL: http://localhost:4001
 
     steps:
       - uses: actions/checkout@v4

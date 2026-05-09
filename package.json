@@ -5,7 +5,7 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "pnpm --parallel --filter @algoforge/api --filter @algoforge/web dev",
+    "dev": "pnpm --parallel --filter @algoforge/apiv2 --filter @algoforge/web dev",
     "dev:api": "pnpm --filter @algoforge/api dev",
     "dev:web": "pnpm --filter @algoforge/web dev",
     "dev:worker": "pnpm --filter @algoforge/worker dev",

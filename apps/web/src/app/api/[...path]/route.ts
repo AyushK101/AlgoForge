@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 
 const backendBaseUrl = (
+  process.env.INTERNAL_APIV2_URL ??
+  process.env.NEXT_PUBLIC_APIV2_URL ??
   process.env.INTERNAL_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:4000"
+  "http://localhost:4001"
 ).replace(/\/$/, "");
 
 async function proxyRequest(
