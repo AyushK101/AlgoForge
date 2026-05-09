@@ -48,13 +48,22 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetail }) {
     <main className="workspace">
       <section className="workspace-pane">
         <div className="tabs">
-          <button className="button" onClick={() => setTab('statement')}>
+          <button
+            className={`tab ${tab === 'statement' ? 'active' : ''}`}
+            onClick={() => setTab('statement')}
+          >
             Statement
           </button>
-          <button className="button" onClick={() => setTab('samples')}>
+          <button
+            className={`tab ${tab === 'samples' ? 'active' : ''}`}
+            onClick={() => setTab('samples')}
+          >
             Samples
           </button>
-          <button className="button" onClick={() => setTab('submissions')}>
+          <button
+            className={`tab ${tab === 'submissions' ? 'active' : ''}`}
+            onClick={() => setTab('submissions')}
+          >
             Result
           </button>
         </div>
