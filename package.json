@@ -11,6 +11,8 @@
     "dev:worker": "pnpm --filter @algoforge/worker dev",
     "dev:orchestrator": "pnpm --filter @algoforge/orchestrator dev",
     "build": "pnpm --filter @algoforge/types build && pnpm --filter @algoforge/db build && pnpm --filter @algoforge/web build",
+    "build:web": "pnpm --filter @algoforge/types build && pnpm --filter @algoforge/db generate && pnpm --filter @algoforge/db build && pnpm --filter @algoforge/web build",
+    "build:api": "pnpm --filter @algoforge/types build && pnpm --filter @algoforge/db generate && pnpm --filter @algoforge/db build && pnpm --filter @algoforge/apiv2 build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
