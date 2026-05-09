@@ -3,7 +3,7 @@ import { prisma } from "@algoforge/db";
 import {
   aggregateSubmission,
   createSubmission,
-} from "../services/submission-service";
+} from "../services/submission-service.js";
 
 export async function submissionRoutes(app: FastifyInstance) {
   app.post("/submissions", async (request, reply) => {

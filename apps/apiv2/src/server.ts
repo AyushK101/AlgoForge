@@ -5,13 +5,13 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
-import { config } from "./config";
-import { healthRoutes } from "./routes/health";
-import { metricsRoutes } from "./routes/metrics";
-import { problemRoutes } from "./routes/problems";
-import { submissionRoutes } from "./routes/submissions";
-import { httpRequestDuration } from "./metrics";
-import { seedLanguages } from "./bootstrap";
+import { config } from "./config.js";
+import { healthRoutes } from "./routes/health.js";
+import { metricsRoutes } from "./routes/metrics.js";
+import { problemRoutes } from "./routes/problems.js";
+import { submissionRoutes } from "./routes/submissions.js";
+import { httpRequestDuration } from "./metrics.js";
+import { seedLanguages } from "./bootstrap.js";
 
 loadEnv({
   path: fileURLToPath(new URL("../.env", import.meta.url)),

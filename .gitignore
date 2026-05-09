@@ -14,3 +14,4 @@ minio-data
 .codex
 *.bak
 *.tsbuildinfo
+.vercel

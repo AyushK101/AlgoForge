@@ -3,9 +3,9 @@ import {
   createSubmissionSchema,
   type CreateSubmissionInput,
 } from "@algoforge/types";
-import { submissionsCreated } from "../metrics";
-import { ensureLanguageSeeded } from "../bootstrap";
-import { enqueueSubmissionExecution } from "./local-executor";
+import { submissionsCreated } from "../metrics.js";
+import { ensureLanguageSeeded } from "../bootstrap.js";
+import { enqueueSubmissionExecution } from "./local-executor.js";
 
 const maxQueuedSubmissionsPerUser = Number(
   process.env.MAX_QUEUED_SUBMISSIONS_PER_USER ?? 5,

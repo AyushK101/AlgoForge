@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { registry } from "../metrics";
+import { registry } from "../metrics.js";
 
 export async function metricsRoutes(app: FastifyInstance) {
   app.get("/metrics", async (_request, reply) => {
