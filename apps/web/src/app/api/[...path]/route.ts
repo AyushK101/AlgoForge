@@ -52,31 +52,24 @@ async function proxyRequest(
     }
 
     const upstreamResponse = await fetch(targetUrl, init);
-    const text = request.method === "HEAD" ? "" : await upstreamResponse.text();
 
-    let data: unknown;
-
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = {
-        raw: text,
-      };
-    }
-
+    // Stream upstream response body directly to the client, but filter headers
     const responseHeaders: Record<string, string> = {
       "cache-control": "no-store, no-transform",
     };
 
-    // Copy select headers from upstream response, excluding encoding-related ones
+    // Forward a small set of safe headers from upstream, but explicitly
+    // exclude encoding and length headers to avoid double-encoding issues.
     const headersToForward = ["content-type", "x-request-id", "etag"];
-
     for (const header of headersToForward) {
       const value = upstreamResponse.headers.get(header);
       if (value) responseHeaders[header] = value;
     }
 
-    return NextResponse.json(data, {
+    // Do not forward `content-encoding`, `transfer-encoding`, or `content-length`.
+    const body = request.method === "HEAD" ? null : upstreamResponse.body;
+
+    return new NextResponse(body, {
       status: upstreamResponse.status,
       headers: responseHeaders,
     });
