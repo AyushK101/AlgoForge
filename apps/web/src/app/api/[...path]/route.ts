@@ -47,31 +47,24 @@ async function handler(
 
     const upstream = await fetch(url, {
       method: request.method,
-      headers: request.headers,
+      headers: buildHeaders(request), // IMPORTANT FIX
       body: hasBody ? await request.text() : undefined,
       cache: "no-store",
       redirect: "manual",
     });
 
-    // const headers = new Headers(upstream.headers);
+    console.log(upstream);
 
-    // headers.delete("content-encoding");
-    // headers.delete("content-length");
-    // headers.delete("transfer-encoding");
+    const text = request.method === "HEAD" ? null : await upstream.text();
 
-    // headers.set("cache-control", "no-store");
-
-    // return new NextResponse(upstream.body, {
-    //   status: upstream.status,
-    //   headers: upstream.headers,
-    // });
-    return NextResponse.json(
-      await upstream.json(),
-      {
-        status: upstream.status,
-        // headers: headers,
+    return new NextResponse(text, {
+      status: upstream.status,
+      headers: {
+        "content-type":
+          upstream.headers.get("content-type") ?? "application/json",
+        "cache-control": "no-store, no-transform",
       },
-    );
+    });
   } catch (error) {
     return NextResponse.json(
       {
