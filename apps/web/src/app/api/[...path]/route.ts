@@ -63,6 +63,7 @@ async function handler(
         "content-type":
           upstream.headers.get("content-type") ?? "application/json",
         "cache-control": "no-store, no-transform",
+        "x-algoforge-proxy": "next-route-handler",
       },
     });
   } catch (error) {
