@@ -64,11 +64,21 @@ async function proxyRequest(
       };
     }
 
+    const responseHeaders: Record<string, string> = {
+      "cache-control": "no-store, no-transform",
+    };
+
+    // Copy select headers from upstream response, excluding encoding-related ones
+    const headersToForward = ["content-type", "x-request-id", "etag"];
+
+    for (const header of headersToForward) {
+      const value = upstreamResponse.headers.get(header);
+      if (value) responseHeaders[header] = value;
+    }
+
     return NextResponse.json(data, {
       status: upstreamResponse.status,
-      headers: {
-        "cache-control": "no-store, no-transform",
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     return NextResponse.json(
